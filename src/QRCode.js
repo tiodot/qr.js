@@ -77,9 +77,8 @@ class Polynomial {
 
 class QRCode {
   constructor(data) {
-    this.data = data
     this.dataMode = 1 << 2 // 使用8bit-byte格式
-    this.version = 2 // 使用version1 21 * 21 尺寸
+    this.version = 2 // 使用version2 25 * 25 尺寸
     this.size = this.version * 4 + 17
     this.maskPattern = 7
     this.errorCorrectLevel = 1 // 1-L-01  0-M-00 3-Q-11 2-H-10
@@ -88,6 +87,7 @@ class QRCode {
     for (let i = 0; i < this.size; i++) {
       this.modules[i] = new Array(this.size).fill(null)
     }
+    this.data = data
   }
   make() {
     // 定位图案
@@ -98,7 +98,7 @@ class QRCode {
     this.setTimingPattern()
     // 版本信息&格式信息
     this.setTypeInfo()
-    // 数据码&纠错码
+    // // 数据码&纠错码
     this.mapData(this.createData())
     return this.modules
   }
@@ -124,7 +124,7 @@ class QRCode {
       [1, 1, 1, 1, 1, 1, 1, 0],
       [0, 0, 0, 0, 0, 0, 0, 0],
     ]
-    // 根据detection数组替换modules中对应位置的0 -> 1
+    // 根据detection数组替换modules中对应位置的 null -> 0 / 1
     for (let r = 0; r <= 7; r++) {
       const positions = detection[r]
       const row = this.modules[r]
@@ -272,9 +272,11 @@ class QRCode {
     if (binaryData.length <= dataCount + 4) {
       binaryData += getBinary(0, 4)
     }
+    // 不足8位补齐一下0
     if (binaryData.length % 8) {
       binaryData += getBinary('0', 8 - (binaryData.length % 8))
     }
+    // 数据长度不够，用 0xec 和 0x11补齐
     while (true) {
       if (binaryData.length >= dataCount) {
         break
